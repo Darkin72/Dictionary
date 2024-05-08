@@ -233,8 +233,13 @@ bool loadMedia()
 	bool success = true;
 
 	//Tải tài nguyên
-	bg.load("src/image1.jpg");
-	
+	gTexture = loadTexture("src/image1.jpg");
+	if (gTexture == NULL)
+	{
+		printf("Failed to load texture image!\n");
+		success = false;
+	}
+
 	return success;
 }
 
