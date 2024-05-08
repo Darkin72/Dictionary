@@ -87,7 +87,7 @@ bool loadMedia()
 	bool success = true;
 
 	//Tải tài nguyên
-	gTexture = loadTexture("src/image1.jpg");
+	gTexture = loadTexture("src/background.jpg");
 	if (gTexture == NULL)
 	{
 		printf("Failed to load texture image!\n");
