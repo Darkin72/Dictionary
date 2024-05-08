@@ -4,11 +4,14 @@
 #include <stdio.h>
 #include <string>
 #include <fstream>
+#include <map>
 
 //Kích thước cửa số
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
+//Khởi tạo một số hằng số cần thiết
+const int totalBtn = 1;
 //Khởi tạo cửa sổ
 bool init();
 SDL_Window* gWindow = NULL;
@@ -22,11 +25,154 @@ void close();
 //Tải ảnh lên như 1 texture
 SDL_Texture* loadTexture(std::string path);
 
+
 //Đưa cửa số ra màn hình
 SDL_Renderer* gRenderer = NULL;
 
-//Texture hiện tại xuất hiện
-SDL_Texture* gTexture = NULL;
+//map các texture
+
+//tọa độ nút
+std::map<std::string, std::pair<int, int>> coorBtn{
+	{"btn1",{628,266}},
+	{"btn2",{628,430}},
+	
+};
+//class Texture
+class gTexture
+{
+public:
+	//Initializes variables
+	gTexture() {
+		success = true;
+		mTexture = NULL;
+		mWidth = 0;
+		mHeight = 0;
+		xA = 0;
+		yA = 0;
+	}
+	void load(std::string path) {
+		success = true;
+		free();
+		SDL_Texture* newTexture = NULL;
+		newTexture = IMG_LoadTexture(gRenderer, path.c_str());
+		if (newTexture == NULL)
+		{
+			printf("Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+			success = false;
+		}
+		else
+		{
+			SDL_QueryTexture(newTexture, NULL, NULL, &mWidth, &mHeight);
+		}
+		mTexture = newTexture;
+	}
+	//Deallocates memory
+	~gTexture() {
+		//Deallocate
+		free();
+	}
+
+	//Deallocates texture
+	void free() {
+		// Free texture if it exists
+		if (mTexture != NULL)
+		{
+			SDL_DestroyTexture(mTexture);
+			mTexture = NULL;
+			mWidth = 0;
+			mHeight = 0;
+		}
+	}
+
+	//Renders texture at given point
+	void render(int x, int y) {
+		SDL_Rect box = { x, y, mWidth, mHeight };
+		setXA(x);
+		setYA(y);
+		SDL_RenderCopy(gRenderer, mTexture, NULL, &box);
+	}
+
+	//Gets image dimensions
+	int getWidth() {
+		return mWidth;
+	}
+	int getHeight() {
+		return mHeight;
+	}
+	void setXA(int x) {
+		xA = x;
+	}
+
+	void setYA(int y) {
+		xA = y;
+	}
+	int getXA() {
+		return xA;
+	}
+	int getYA() {
+		return yA;
+	}
+	bool check() {
+		return success;
+	}
+	void setBlendMode(SDL_BlendMode blending)
+	{
+		//Set blending function
+		SDL_SetTextureBlendMode(mTexture, blending);
+	}
+	void setColor(int x, int y, int z) {
+		SDL_SetTextureColorMod(mTexture, x, y, z);
+	}
+private:
+	//The actual hardware texture
+	SDL_Texture* mTexture;
+
+	//Image dimensions
+	bool success;
+	int mWidth;
+	int mHeight;
+	int xA;
+	int yA;
+};
+
+//background
+gTexture bg;
+gTexture btn1;
+gTexture btn2;
+std::map<std::string, gTexture> myTextures = {
+	{"bg",bg},
+	{"btn1", btn1},
+	{"btn2", btn2},
+};
+class gBtn {
+public:
+	gBtn() {
+		mPos.x = 0;
+		mPos.y = 0;
+		mPos.w = 0;
+		mPos.h = 0;
+		com = "";
+	}
+	void getInf(std::string temp, int x = -1, int y = -1) {
+		if (x == -1)
+		{
+			mPos.x = coorBtn[temp].first;
+			mPos.y = coorBtn[temp].second;
+		}
+		else {
+			mPos.x = x;
+			mPos.y = y;
+		}
+		mPos.w = myTextures[temp].getWidth();
+		mPos.h = myTextures[temp].getHeight();
+		com = temp;
+	}
+	void handleEvent(SDL_Event* e);
+private:
+	SDL_Rect mPos;
+	std::string com;
+};
+
 
 bool init()
 {
@@ -77,7 +223,7 @@ bool init()
 			}
 		}
 	}
-
+	
 	return success;
 }
 
@@ -87,21 +233,13 @@ bool loadMedia()
 	bool success = true;
 
 	//Tải tài nguyên
-	gTexture = loadTexture("src/image1.jpg");
-	if (gTexture == NULL)
-	{
-		printf("Failed to load texture image!\n");
-		success = false;
-	}
-
+	bg.load("src/image1.jpg");
+	
 	return success;
 }
 
 void close()
 {
-	//Giải phóng bộ nhớ
-	SDL_DestroyTexture(gTexture);
-	gTexture = NULL;
 
 	//Xóa cửa sổ
 	SDL_DestroyRenderer(gRenderer);
@@ -113,34 +251,57 @@ void close()
 	IMG_Quit();
 	SDL_Quit();
 }
-
-SDL_Texture* loadTexture(std::string path)
+void gBtn::handleEvent(SDL_Event* e)
 {
-	//The final texture
-	SDL_Texture* newTexture = NULL;
+	if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+	{
+		//Get mouse position
+		int x, y;
+		SDL_GetMouseState(&x, &y);
+		//Check if mouse is in button
+		bool inside = true;
 
-	//Load image at specified path
-	SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-	if (loadedSurface == NULL)
-	{
-		printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-	}
-	else
-	{
-		//Create texture from surface pixels
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-		if (newTexture == NULL)
+		//Mouse is left of the button
+		if (x < mPos.x)
 		{
-			printf("Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
+			inside = false;
 		}
+		//Mouse is right of the button
+		else if (x > mPos.x + mPos.w)
+		{
+			inside = false;
+		}
+		//Mouse above the button
+		else if (y < mPos.y)
+		{
+			inside = false;
+		}
+		//Mouse below the button
+		else if (y > mPos.y + mPos.h)
+		{
+			inside = false;
+		}
+		//Mouse is outside button
+		if (!inside)
+		{
+			//place holder
+		}
+		//Mouse is inside button
+		else
+		{
+			//Set mouse over sprite
+			switch (e->type)
+			{
+				/*case SDL_MOUSEMOTION:
 
-		//Get rid of old loaded surface
-		SDL_FreeSurface(loadedSurface);
+					break;*/
+
+				case SDL_MOUSEBUTTONDOWN:
+					break;
+			}
+		}
 	}
-
-	return newTexture;
 }
-
 int main(int argc, char* args[])
 {
 	//Bắt đầu SDL và tạo cửa sổ
@@ -174,13 +335,12 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+					
 				}
 
 				//Xóa màn hình
 				SDL_RenderClear(gRenderer);
-
-				//Vẽ ảnh lên màn hình
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+				bg.render(0, 0);
 
 				//Cập nhật màn hình
 				SDL_RenderPresent(gRenderer);
