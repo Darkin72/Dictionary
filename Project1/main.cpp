@@ -10,8 +10,12 @@
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-//Khởi tạo một số hằng số cần thiết
-const int totalBtn = 1;
+//Khởi tạo một số biến và hằng số cần thiết
+const int totalBtn = 2;
+bool start = 1;
+//Cờ lặp chính
+bool quit = false;
+
 //Khởi tạo cửa sổ
 bool init();
 SDL_Window* gWindow = NULL;
@@ -33,9 +37,9 @@ SDL_Renderer* gRenderer = NULL;
 
 //tọa độ nút
 std::map<std::string, std::pair<int, int>> coorBtn{
-	{"btn1",{628,266}},
-	{"btn2",{628,430}},
-	
+	{"btn1",{650,266}},
+	{"btn2",{650,430}},
+
 };
 //class Texture
 class gTexture
@@ -71,6 +75,8 @@ public:
 		//Deallocate
 		free();
 	}
+
+	//Loads image at specified path
 
 	//Deallocates texture
 	void free() {
@@ -172,6 +178,7 @@ private:
 	SDL_Rect mPos;
 	std::string com;
 };
+gBtn TotalButton[totalBtn];
 
 
 bool init()
@@ -223,7 +230,7 @@ bool init()
 			}
 		}
 	}
-	
+
 	return success;
 }
 
@@ -233,12 +240,12 @@ bool loadMedia()
 	bool success = true;
 
 	//Tải tài nguyên
-	gTexture = loadTexture("src/image1.jpg");
-	if (gTexture == NULL)
-	{
-		printf("Failed to load texture image!\n");
-		success = false;
-	}
+	myTextures["bg"].load("src/background.jpg");
+	myTextures["btn1"].load("src/start.jpg");
+	myTextures["btn2"].load("src/quit.jpg");
+
+	TotalButton[0].getInf("btn1");
+	TotalButton[1].getInf("btn2");
 
 	return success;
 }
@@ -301,8 +308,13 @@ void gBtn::handleEvent(SDL_Event* e)
 
 					break;*/
 
-				case SDL_MOUSEBUTTONDOWN:
-					break;
+			case SDL_MOUSEBUTTONDOWN:
+				if (com == "btn2") {
+					quit = true;
+				}
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -323,8 +335,6 @@ int main(int argc, char* args[])
 		}
 		else
 		{
-			//Cờ lặp chính
-			bool quit = false;
 
 			//Xử lý sự kiện
 			SDL_Event e;
@@ -335,17 +345,25 @@ int main(int argc, char* args[])
 				//Xử lý sự kiện
 				while (SDL_PollEvent(&e) != 0)
 				{
+					//Người dùng bấm nút
+					for (int i = 0; i < 2; i++) {
+						TotalButton[i].handleEvent(&e);
+					}
 					//Người dùng thoát
 					if (e.type == SDL_QUIT)
 					{
 						quit = true;
 					}
-					
 				}
 
 				//Xóa màn hình
 				SDL_RenderClear(gRenderer);
-				bg.render(0, 0);
+				if(start)
+				{
+					myTextures["bg"].render(0, 0);
+					myTextures["btn1"].render(650, 266);
+					myTextures["btn2"].render(650, 430);
+				}
 
 				//Cập nhật màn hình
 				SDL_RenderPresent(gRenderer);
