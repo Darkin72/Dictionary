@@ -512,7 +512,6 @@ void gBtn::handleEvent(SDL_Event* e)
 								std::string command = "espeak \"" + inputText + "\"";
 								const char* charCommand = command.c_str();
 								system(charCommand);
-								SDL_Delay(1);
 						}
 						else if (com == "itemBtn") {
 							
@@ -570,10 +569,12 @@ int main(int argc, char* args[])
 					if (start)
 						for (int i = 0; i < totalBtn1; i++) {
 							TotalButton1[i].handleEvent(&e);
+							
 						}
 					else {
 						for (int i = 0; i < totalBtn2; i++) {
 							TotalButton2[i].handleEvent(&e);
+							SDL_Delay(1);
 						}
 						int x, y;
 						SDL_GetMouseState(&x, &y);
