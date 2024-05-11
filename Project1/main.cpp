@@ -692,7 +692,6 @@ int main(int argc, char* args[])
 							else break;
 						}
 					}
-					std::cout << copy.size() << '\n';
 					if (choose.name != "") {
 						item.load(choose.name, textColor);
 						item.render(350, 192);
