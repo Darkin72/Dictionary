@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @da //
 
 @dab //
@@ -12,5 +13,16 @@ dbkjdkfj
 do
 dog
 dohoooooog
+=======
+da
+dab
+damn
+dba
+dbnm
+dbkjdkfj
+do
+dog
+doooooooog
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 doggy
 dogdog

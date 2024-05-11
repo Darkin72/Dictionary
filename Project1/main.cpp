@@ -9,7 +9,10 @@
 #include <map>
 #include <iostream>
 #include <vector>
+<<<<<<< HEAD
 #include <iomanip>
+=======
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 
 
 //Kích thước cửa số
@@ -25,8 +28,16 @@ SDL_Color textColor = { 0, 0, 0 };
 std::string inputText;
 //Cờ lặp chính
 bool quit = false;
+<<<<<<< HEAD
 int mouseY=-1;
 int cur = 0;
+=======
+
+//vector danh sách item xuất hiện
+std::vector<std::string> itemList;
+int l = 0;
+int r = 9;
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 //Khởi tạo cửa sổ
 bool init();
 SDL_Window* gWindow = NULL;
@@ -305,6 +316,7 @@ private:
 };
 Text FindWord;
 Text item;
+<<<<<<< HEAD
 
 struct word {
 	std::string name;
@@ -351,17 +363,49 @@ void genItem(std::string inputText, std::vector<word>& itemList) {
 		for (auto x : itemList) {
 			if (x.name.length() >= inputText.length()) {
 				if (inputText == x.name.substr(0, inputText.length())) {
+=======
+void genItem(std::string inputText, std::vector<std::string>& itemList) {
+	int n = inputText.size();
+	if (n >= 1) {
+		std::ifstream inp(std::string("src/") + inputText[0] + std::string(".txt"));
+		itemList.clear();
+		std::string temp;
+		while (std::getline(inp, temp)) {
+			itemList.push_back(temp);
+		}
+		inp.close();
+		std::vector<std::string> copy;
+		for (auto x : itemList) {
+			if (x.size() >= n) {
+				if (inputText == x.substr(0, n)) {
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 					copy.push_back(x); //giữ lại những từ có phần tử đầu giống inputText
 				}
 			}
 		}
 		itemList = copy;
 	}
+<<<<<<< HEAD
 	else 
 		itemList.clear();
 	while (itemList.size() < 10) {
 		itemList.push_back({"",""});
 	}
+=======
+	else if (n == 0) {
+		itemList.clear();
+	}
+	n = itemList.size();
+	if (itemList.size() % 10 !=0) {
+		int m = itemList.size() / 10;
+		m++;
+		for (int i = 1; i <= (10 * m) - n; i++) {
+			itemList.push_back("");
+		}
+	}
+	
+
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 }
 bool init()
 {
@@ -435,7 +479,11 @@ bool loadMedia()
 	myTextures["back"].load("src/back.png");
 	myTextures["speech"].load("src/speech.png");
 	myTextures["itemBtn"].load("src/item.png");
+<<<<<<< HEAD
 	gFont = TTF_OpenFont("src/lazy.ttf", 44);
+=======
+	gFont = TTF_OpenFont("src/lazy.ttf", 51);
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 
 	TotalButton1[0].getInf("btn1");
 	TotalButton1[1].getInf("btn2");
@@ -443,7 +491,11 @@ bool loadMedia()
 	TotalButton2[0].getInf("back");
 	TotalButton2[1].getInf("speech");
 	for (int i = 2; i <= 11; i++) {
+<<<<<<< HEAD
 		TotalButton2[i].getInf("itemBtn",0,204+(i-2)*50);
+=======
+		TotalButton2[i].getInf("itemBtn",0,192+(i-2)*50);
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 	}
 
 	if (gFont == NULL)
@@ -528,11 +580,17 @@ void gBtn::handleEvent(SDL_Event* e)
 					else {
 						if (com == "back") {
 							start = 1;
+<<<<<<< HEAD
 							choose.reset();
 							mouseY = -1;
 							cur = 0;
 							itemList.clear();
 							copy.clear();
+=======
+							l = 0;
+							r = 9;
+							itemList.clear();
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 						}
 						else if (com == "speech") {
 								std::string command = "espeak \"" + inputText + "\"";
@@ -540,7 +598,21 @@ void gBtn::handleEvent(SDL_Event* e)
 								system(charCommand);
 						}
 						else if (com == "itemBtn") {
+<<<<<<< HEAD
 								choose = itemList[(mPos.y - 204) / 50 + cur];
+=======
+							
+								std::string cache = itemList[(mPos.y - 192) / 50 + l];
+								std::cout << cache;
+								/*Text temp;
+								std::string t;
+								std::ifstream p(std::string("src/") + cache + std::string(".txt"));
+								while (std::getline(p, t)) {
+									temp.load(t, textColor);
+									temp.render(340, 210);
+								}*/
+
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 						}
 						
 					}
@@ -585,6 +657,7 @@ int main(int argc, char* args[])
 					if (start)
 						for (int i = 0; i < totalBtn1; i++) {
 							TotalButton1[i].handleEvent(&e);
+							
 						}
 					else {
 						for (int i = 0; i < totalBtn2; i++) {
@@ -593,6 +666,7 @@ int main(int argc, char* args[])
 						}
 						int x, y;
 						SDL_GetMouseState(&x, &y);
+<<<<<<< HEAD
 						if (y > 204 && x < 300) { //nằm trong area itemList
 							mouseY = (y - 204) / 50;
 							if (e.type == SDL_MOUSEWHEEL) {
@@ -604,15 +678,40 @@ int main(int argc, char* args[])
 								}
 							}
 						} else mouseY = -1;
+=======
+						if (e.type == SDL_MOUSEWHEEL) {
+							if (y > 185 && x < 300) { //nằm trong area itemList
+								if (e.wheel.y > 0) { // lăn chuột lên
+									if (l > 0) {
+										l -= 10;
+										r -= 10;
+									}
+								}
+								else if (e.wheel.y < 0) { //lăn chuột xuống
+									if (r < itemList.size() - 1) {
+										l += 10;
+										r += 10;
+									}
+								}
+							}
+							
+						}
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 							
 						if (e.type == SDL_KEYDOWN)
 						{
 							//Handle backspace
 							if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
 							{
+								//reset 2 pointer
+								l = 0;
+								r = 9;
 								//lop off character
 								inputText.pop_back();
+<<<<<<< HEAD
 								copy.clear();
+=======
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 								genItem(inputText, itemList);
 							}
 							//Handle copy
@@ -635,6 +734,9 @@ int main(int argc, char* args[])
 							//Not copy or pasting
 							if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
 							{
+								//reset 2 pointer
+								l = 0;
+								r = 9;
 								//Append character
 								inputText += e.text.text;
 								genItem(inputText, itemList);
@@ -675,6 +777,7 @@ int main(int argc, char* args[])
 					myTextures["bg2"].render(0, 0);
 					myTextures["speech"].render(0, 0);
 					FindWord.render(404, 0);
+<<<<<<< HEAD
 					if (itemList.size() != 0) {
 						if (mouseY >= 0 && mouseY < copy.size()) myTextures["itemBtn"].render(0, 50 * mouseY + 204);
 						for (int i=0;i<min(10,itemList.size()-cur);i++)
@@ -696,6 +799,19 @@ int main(int argc, char* args[])
 						for (int i = 0; i < choose.content.size(); i++) {
 							item.load(choose.content[i], textColor);
 							item.render(350, 292 + i * 50);
+=======
+					int c = 0;
+					if (itemList.size() != 0) {
+						for (int b = l; b <= r; b++) {
+							if (itemList[b] != "") {
+								item.load(itemList[b],textColor);
+								item.render(0, 50 * c + 192);
+							}
+							else {
+								break;
+							}
+							c++;
+>>>>>>> a56f4d1ccb48c99e355e5ea583438141c91c3adb
 						}
 					}
 				}
