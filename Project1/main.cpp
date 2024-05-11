@@ -7,6 +7,10 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <iostream>
+#include <vector>
+#include <iomanip>
+
 
 //Kích thước cửa số
 const int SCREEN_WIDTH = 1280;
@@ -14,14 +18,15 @@ const int SCREEN_HEIGHT = 720;
 
 //Khởi tạo một số biến và hằng số cần thiết
 const int totalBtn1 = 2;
-const int totalBtn2 = 2;
+const int totalBtn2 = 12;
 bool start = 1;
 TTF_Font* gFont = NULL;
 SDL_Color textColor = { 0, 0, 0 };
-std::string inputText = "";
+std::string inputText;
 //Cờ lặp chính
 bool quit = false;
-
+int mouseY=-1;
+int cur = 0;
 //Khởi tạo cửa sổ
 bool init();
 SDL_Window* gWindow = NULL;
@@ -31,10 +36,6 @@ bool loadMedia();
 
 //Giải phóng bộ nhớ và đóng cửa sổ
 void close();
-
-//Tải ảnh lên như 1 texture
-SDL_Texture* loadTexture(std::string path);
-
 
 //Đưa cửa số ra màn hình
 SDL_Renderer* gRenderer = NULL;
@@ -155,6 +156,7 @@ gTexture btn2;
 gTexture bg2;
 gTexture back;
 gTexture speech;
+gTexture itemBtn;
 std::map<std::string, gTexture> myTextures = {
 	{"bg",bg},
 	{"btn1", btn1},
@@ -162,6 +164,7 @@ std::map<std::string, gTexture> myTextures = {
 	{"bg2", bg2},
 	{"back", back},
 	{"speech", speech},
+	{"itemBtn",itemBtn},
 };
 class gBtn {
 public:
@@ -301,6 +304,65 @@ private:
 	int mHeight;
 };
 Text FindWord;
+Text item;
+
+struct word {
+	std::string name;
+	std::string pronounce;
+	std::vector<std::string> content;
+	void reset() {
+		name = "";
+		pronounce = "";
+		content.clear();
+	}
+};
+word newword,choose;
+//vector danh sách item xuất hiện
+std::vector<word> itemList;
+std::vector<word> copy;
+void genItem(std::string inputText, std::vector<word>& itemList) {
+	//làm mới danh sách
+	cur = 0;
+	if (inputText.length() >= 1) {
+		std::ifstream inp(std::string("src/") + inputText[0] +std::string(".txt"));
+		itemList.clear();
+		std::string temp;
+		while (std::getline(inp, temp)) {
+			if(temp[0]=='@')
+			{
+				if (!newword.name.empty()) itemList.push_back(newword);
+				newword.reset();
+				bool p = 0;
+				for(int i=1;i<temp.length();i++)
+				{
+					if (temp[i] == '/') p = 1;
+					if(!p)
+					{
+						newword.name += temp[i];
+					}
+					else newword.pronounce += temp[i];
+				}
+			}
+			else newword.content.push_back(temp.substr(0, temp.length()));
+		}
+		if (!newword.name.empty()) itemList.push_back(newword);
+		inp.close();
+		copy.clear();
+		for (auto x : itemList) {
+			if (x.name.length() >= inputText.length()) {
+				if (inputText == x.name.substr(0, inputText.length())) {
+					copy.push_back(x); //giữ lại những từ có phần tử đầu giống inputText
+				}
+			}
+		}
+		itemList = copy;
+	}
+	else 
+		itemList.clear();
+	while (itemList.size() < 10) {
+		itemList.push_back({"",""});
+	}
+}
 bool init()
 {
 	//Khởi tạo cờ
@@ -372,13 +434,17 @@ bool loadMedia()
 	myTextures["btn2"].load("src/quit.jpg");
 	myTextures["back"].load("src/back.png");
 	myTextures["speech"].load("src/speech.png");
-	gFont = TTF_OpenFont("src/lazy.ttf", 51);
+	myTextures["itemBtn"].load("src/item.png");
+	gFont = TTF_OpenFont("src/lazy.ttf", 44);
 
 	TotalButton1[0].getInf("btn1");
 	TotalButton1[1].getInf("btn2");
 
 	TotalButton2[0].getInf("back");
 	TotalButton2[1].getInf("speech");
+	for (int i = 2; i <= 11; i++) {
+		TotalButton2[i].getInf("itemBtn",0,204+(i-2)*50);
+	}
 
 	if (gFont == NULL)
 	{
@@ -449,24 +515,34 @@ void gBtn::handleEvent(SDL_Event* e)
 				/*case SDL_MOUSEMOTION:
 
 					break;*/
-
+			
 			case SDL_MOUSEBUTTONDOWN:
 				if (com == "btn2") {
 					quit = true;
 				} else 
 					if (com == "btn1") {
 						start = 0;
+						inputText = "";
+						genItem(inputText, itemList);
 					}
 					else {
 						if (com == "back") {
 							start = 1;
+							choose.reset();
+							mouseY = -1;
+							cur = 0;
+							itemList.clear();
+							copy.clear();
 						}
-						else 
-							if (com == "speech") {
+						else if (com == "speech") {
 								std::string command = "espeak \"" + inputText + "\"";
 								const char* charCommand = command.c_str();
 								system(charCommand);
-							}
+						}
+						else if (com == "itemBtn") {
+								choose = itemList[(mPos.y - 204) / 50 + cur];
+						}
+						
 					}
 				break;
 			default:
@@ -513,7 +589,22 @@ int main(int argc, char* args[])
 					else {
 						for (int i = 0; i < totalBtn2; i++) {
 							TotalButton2[i].handleEvent(&e);
+							SDL_Delay(1);
 						}
+						int x, y;
+						SDL_GetMouseState(&x, &y);
+						if (y > 204 && x < 300) { //nằm trong area itemList
+							mouseY = (y - 204) / 50;
+							if (e.type == SDL_MOUSEWHEEL) {
+								if (e.wheel.y > 0) { // lăn chuột lên
+									if (cur > 0) --cur;
+								}
+								else if (e.wheel.y < 0) { //lăn chuột xuống
+									if (cur < (int)itemList.size() - 10) ++cur;
+								}
+							}
+						} else mouseY = -1;
+							
 						if (e.type == SDL_KEYDOWN)
 						{
 							//Handle backspace
@@ -521,6 +612,8 @@ int main(int argc, char* args[])
 							{
 								//lop off character
 								inputText.pop_back();
+								copy.clear();
+								genItem(inputText, itemList);
 							}
 							//Handle copy
 							else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
@@ -534,7 +627,6 @@ int main(int argc, char* args[])
 								char* tempText = SDL_GetClipboardText();
 								inputText = tempText;
 								SDL_free(tempText);
-
 							}
 					}
 					//Special text input event
@@ -545,6 +637,7 @@ int main(int argc, char* args[])
 							{
 								//Append character
 								inputText += e.text.text;
+								genItem(inputText, itemList);
 							}
 					}
 					}
@@ -582,6 +675,29 @@ int main(int argc, char* args[])
 					myTextures["bg2"].render(0, 0);
 					myTextures["speech"].render(0, 0);
 					FindWord.render(404, 0);
+					if (itemList.size() != 0) {
+						if (mouseY >= 0 && mouseY < copy.size()) myTextures["itemBtn"].render(0, 50 * mouseY + 204);
+						for (int i=0;i<min(10,itemList.size()-cur);i++)
+							{
+								if (itemList[i + cur].name != "")
+								{
+									item.load(itemList[i + cur].name, textColor);
+									item.render(0, 50 * i + 192);
+								}
+								else break;
+						}
+					}
+					std::cout << copy.size() << '\n';
+					if (choose.name!="") {
+						item.load(choose.name,textColor);
+						item.render(350, 192);
+						item.load(choose.pronounce, textColor);
+						item.render(350, 242);
+						for (int i = 0; i < choose.content.size(); i++) {
+							item.load(choose.content[i], textColor);
+							item.render(350, 292 + i * 50);
+						}
+					}
 				}
 				//Cập nhật màn hình
 				SDL_RenderPresent(gRenderer);
