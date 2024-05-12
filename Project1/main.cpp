@@ -10,6 +10,10 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <fcntl.h>
+#include <io.h>  
+#include <locale>
+#include <codecvt>
 
 
 //Kích thước cửa số
@@ -21,8 +25,12 @@ const int totalBtn1 = 2;
 const int totalBtn2 = 12;
 bool start = 1;
 TTF_Font* gFont = NULL;
+TTF_Font* contentFont = NULL;
 SDL_Color textColor = { 0, 0, 0 };
 std::string inputText;
+Uint8 display_number = 0;
+//khởi tạo đọc unicode
+std::locale loc(std::locale(), new std::codecvt_utf8<wchar_t>);
 //Cờ lặp chính
 bool quit = false;
 int mouseY = -1;
@@ -47,7 +55,6 @@ std::map<std::string, std::pair<int, int>> coorBtn{
 	{"btn1",{650,266}},
 	{"btn2",{650,430}},
 	{"back",{27,0}},
-	{"speech",{0,0}},
 };
 //class Texture
 class gTexture
@@ -155,7 +162,6 @@ gTexture btn1;
 gTexture btn2;
 gTexture bg2;
 gTexture back;
-gTexture speech;
 gTexture itemBtn;
 std::map<std::string, gTexture> myTextures = {
 	{"bg",bg},
@@ -163,7 +169,6 @@ std::map<std::string, gTexture> myTextures = {
 	{"btn2", btn2},
 	{"bg2", bg2},
 	{"back", back},
-	{"speech", speech},
 	{"itemBtn",itemBtn},
 };
 class gBtn {
@@ -253,6 +258,40 @@ public:
 		//Return success
 		return mTexture != NULL;
 	}
+	//Creates image from font string
+	bool specialLoad(std::wstring textureText, SDL_Color textColor)
+	{
+		//Get rid of preexisting texture
+		free();
+
+		//Render text surface
+		SDL_Surface* textSurface = TTF_RenderUNICODE_Solid(contentFont, (const Uint16*)textureText.c_str(), textColor);
+		if (textSurface == NULL)
+		{
+			printf("Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
+		}
+		else
+		{
+			//Create texture from surface pixels
+			mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+			if (mTexture == NULL)
+			{
+				printf("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
+			}
+			else
+			{
+				//Get image dimensions
+				mWidth = textSurface->w;
+				mHeight = textSurface->h;
+			}
+
+			//Get rid of old surface
+			SDL_FreeSurface(textSurface);
+		}
+
+		//Return success
+		return mTexture != NULL;
+	}
 
 	//Deallocates texture
 	void free()
@@ -305,48 +344,38 @@ private:
 };
 Text FindWord;
 Text item;
+Text content;
 
 struct word {
 	std::string name;
-	std::string pronounce;
-	std::vector<std::string> content;
+	int contentPos=0;
 	void reset() {
 		name = "";
-		pronounce = "";
-		content.clear();
+		contentPos = 0;
 	}
 };
 word newword, choose;
+std::vector<std::wstring> ChosenWord;
 //vector danh sách item xuất hiện
 std::vector<word> itemList;
 std::vector<word> copy;
-void genItem(std::string inputText, std::vector<word>& itemList) {
+void genItem(std::string inputText) {
 	//làm mới danh sách
+	display_number = 0;
 	cur = 0;
-	if (inputText.length() >= 1) {
-		std::ifstream inp(std::string("src/") + inputText[0] + std::string(".txt"));
+	if (inputText.length() == 1) {
+		std::ifstream inp(std::string("src/") + inputText[0] + ("/name.txt"));
 		itemList.clear();
 		std::string temp;
 		while (std::getline(inp, temp)) {
-			if (temp[0] == '@')
-			{
-				if (!newword.name.empty()) itemList.push_back(newword);
-				newword.reset();
-				bool p = 0;
-				for (int i = 1; i < temp.length(); i++)
-				{
-					if (temp[i] == '/') p = 1;
-					if (!p)
-					{
-						newword.name += temp[i];
-					}
-					else newword.pronounce += temp[i];
-				}
-			}
-			else newword.content.push_back(temp.substr(0, temp.length()));
+			newword.name = temp;
+			newword.contentPos =(int) itemList.size() + 1;
+			itemList.push_back(newword);
 		}
-		if (!newword.name.empty()) itemList.push_back(newword);
 		inp.close();
+		copy = itemList;
+	}
+	else if (inputText.length() > 1) {
 		copy.clear();
 		for (auto x : itemList) {
 			if (x.name.length() >= inputText.length()) {
@@ -355,12 +384,12 @@ void genItem(std::string inputText, std::vector<word>& itemList) {
 				}
 			}
 		}
-		itemList = copy;
 	}
 	else
 		itemList.clear();
-	while (itemList.size() < 10) {
-		itemList.push_back({ "","" });
+	display_number =(Uint8) copy.size();
+	while (copy.size() < 10) {
+		copy.push_back({ "" });
 	}
 }
 bool init()
@@ -433,17 +462,16 @@ bool loadMedia()
 	myTextures["btn1"].load("src/start.jpg");
 	myTextures["btn2"].load("src/quit.jpg");
 	myTextures["back"].load("src/back.png");
-	myTextures["speech"].load("src/speech.png");
 	myTextures["itemBtn"].load("src/item.png");
 	gFont = TTF_OpenFont("src/lazy.ttf", 44);
+	contentFont = TTF_OpenFont("src/lazy.ttf", 20);
 
 	TotalButton1[0].getInf("btn1");
 	TotalButton1[1].getInf("btn2");
 
 	TotalButton2[0].getInf("back");
-	TotalButton2[1].getInf("speech");
-	for (int i = 2; i <= 11; i++) {
-		TotalButton2[i].getInf("itemBtn", 0, 204 + (i - 2) * 50);
+	for (int i = 1; i <= 10; i++) {
+		TotalButton2[i].getInf("itemBtn", 0, 204 + (i - 1) * 50);
 	}
 
 	if (gFont == NULL)
@@ -524,7 +552,7 @@ void gBtn::handleEvent(SDL_Event* e)
 					if (com == "btn1") {
 						start = 0;
 						inputText = "";
-						genItem(inputText, itemList);
+						genItem(inputText);
 					}
 					else {
 						if (com == "back") {
@@ -534,17 +562,26 @@ void gBtn::handleEvent(SDL_Event* e)
 							cur = 0;
 							itemList.clear();
 							copy.clear();
-						}
-						else if (com == "speech") {
-							if(choose.name!="")
-							{
-								std::string command = "espeak \"" + choose.name + "\"";
-								const char* charCommand = command.c_str();
-								system(charCommand);
-							}
+							ChosenWord.clear();
 						}
 						else if (com == "itemBtn") {
-							choose = itemList[(mPos.y - 204) / 50 + cur];
+							ChosenWord.clear();
+							choose = copy[(mPos.y - 204) / 50 + cur];
+							std::wifstream fin(std::wstring(L"src/") + (wchar_t)inputText[0] + (L"/content.txt"));
+							fin.imbue(loc);
+							std::wstring temp;
+							int count = 1;
+							while (std::getline(fin, temp) && choose.contentPos>=0) {
+								if (choose.contentPos == 0)
+								{
+									ChosenWord.push_back(temp);
+								}
+								if (temp[0] == L'#')
+								{
+									--choose.contentPos;
+								}
+							}
+							fin.close();
 						}
 
 					}
@@ -604,7 +641,7 @@ int main(int argc, char* args[])
 									if (cur > 0) --cur;
 								}
 								else if (e.wheel.y < 0) { //lăn chuột xuống
-									if (cur < (int)itemList.size() - 10) ++cur;
+									if (cur < (int)copy.size() - 10) ++cur;
 								}
 							}
 						}
@@ -618,32 +655,16 @@ int main(int argc, char* args[])
 								//lop off character
 								inputText.pop_back();
 								copy.clear();
-								genItem(inputText, itemList);
-							}
-							//Handle copy
-							else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
-							{
-								SDL_SetClipboardText(inputText.c_str());
-							}
-							//Handle paste
-							else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
-							{
-								//Copy text from temporary buffer
-								char* tempText = SDL_GetClipboardText();
-								inputText = tempText;
-								SDL_free(tempText);
+								genItem(inputText);
 							}
 						}
 						//Special text input event
 						else if (e.type == SDL_TEXTINPUT)
 						{
-							//Not copy or pasting
-							if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
-							{
-								//Append character
-								inputText += e.text.text;
-								genItem(inputText, itemList);
-							}
+						//Not copy or pasting
+							//Append character
+							inputText += e.text.text;
+							genItem(inputText);
 						}
 					}
 					//Người dùng thoát
@@ -678,15 +699,14 @@ int main(int argc, char* args[])
 				}
 				else {
 					myTextures["bg2"].render(0, 0);
-					myTextures["speech"].render(0, 0);
 					FindWord.render(404, 0);
-					if (itemList.size() != 0) {
-						if (mouseY >= 0 && mouseY < copy.size()) myTextures["itemBtn"].render(0, 50 * mouseY + 204);
-						for (int i = 0; i < min(10, itemList.size() - cur); i++)
+					if (copy.size() != 0) {
+						if (mouseY >= 0 && mouseY < display_number) myTextures["itemBtn"].render(0, 50 * mouseY + 204);
+						for (int i = 0; i < min(10, copy.size() - cur); i++)
 						{
-							if (itemList[i + cur].name != "")
+							if (copy[i + cur].name != "")
 							{
-								item.load(itemList[i + cur].name, textColor);
+								item.load(copy[i + cur].name, textColor);
 								item.render(0, 50 * i + 192);
 							}
 							else break;
@@ -695,11 +715,9 @@ int main(int argc, char* args[])
 					if (choose.name != "") {
 						item.load(choose.name, textColor);
 						item.render(350, 192);
-						item.load(choose.pronounce, textColor);
-						item.render(350, 242);
-						for (int i = 0; i < choose.content.size(); i++) {
-							item.load(choose.content[i], textColor);
-							item.render(350, 292 + i * 50);
+						for (int i = 0; i < ChosenWord.size()-1; i++) {
+							content.specialLoad(ChosenWord[i], textColor);
+							content.render(350, 242 + i * 20);
 						}
 					}
 				}
