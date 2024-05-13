@@ -60,7 +60,7 @@ std::map<std::string, std::pair<int, int>> coorBtn{
 class gTexture
 {
 public:
-	//Initializes variables
+	//hàm khởi tạo 1 texture cho class gTexture
 	gTexture() {
 		success = true;
 		mTexture = NULL;
@@ -69,6 +69,7 @@ public:
 		xA = 0;
 		yA = 0;
 	}
+	//tải lên theo đường dẫn sử dụng IMG_LoadTexture
 	void load(std::string path) {
 		success = true;
 		free();
@@ -85,17 +86,12 @@ public:
 		}
 		mTexture = newTexture;
 	}
-	//Deallocates memory
+	//deallocator tự động xóa những thứ được khởi tạo, trái ngược với gTexture()
 	~gTexture() {
-		//Deallocate
 		free();
 	}
-
-	//Loads image at specified path
-
-	//Deallocates texture
+	//hàm giải phóng texture
 	void free() {
-		// Free texture if it exists
 		if (mTexture != NULL)
 		{
 			SDL_DestroyTexture(mTexture);
@@ -105,7 +101,7 @@ public:
 		}
 	}
 
-	//Renders texture at given point
+	//render texture ở tọa độ x y
 	void render(int x, int y) {
 		SDL_Rect box = { x, y, mWidth, mHeight };
 		setXA(x);
@@ -113,7 +109,7 @@ public:
 		SDL_RenderCopy(gRenderer, mTexture, NULL, &box);
 	}
 
-	//Gets image dimensions
+	//lấy kích cỡ của texture đc load vào
 	int getWidth() {
 		return mWidth;
 	}
@@ -138,14 +134,13 @@ public:
 	}
 	void setBlendMode(SDL_BlendMode blending)
 	{
-		//Set blending function
+		//hàm khởi tạo blend mode (liên quan tới màu sắc)
 		SDL_SetTextureBlendMode(mTexture, blending);
 	}
 	void setColor(int x, int y, int z) {
 		SDL_SetTextureColorMod(mTexture, x, y, z);
 	}
 private:
-	//The actual hardware texture
 	SDL_Texture* mTexture;
 
 	//Image dimensions
@@ -203,11 +198,11 @@ gBtn TotalButton1[totalBtn1];
 gBtn TotalButton2[totalBtn2];
 
 
-//Texture text
+//class cho các text
 class Text
 {
 public:
-	//Initializes variables
+	//hàm khởi tạo default
 	Text()
 	{
 		//Initialize
@@ -217,20 +212,19 @@ public:
 
 	}
 
-	//Deallocates memory
+	//tương tự, deallocator của text()
 	~Text()
 	{
-		//Deallocate
 		free();
 	}
 
-	//Creates image from font string
+	//tạo hình ảnh từ 1 string
 	bool load(std::string textureText, SDL_Color textColor)
 	{
-		//Get rid of preexisting texture
+		//giải phóng những thằng đang chứa sẵn nếu có trong texture
 		free();
 
-		//Render text surface
+		//render surface
 		SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText.c_str(), textColor);
 		if (textSurface == NULL)
 		{
@@ -238,7 +232,6 @@ public:
 		}
 		else
 		{
-			//Create texture from surface pixels
 			mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
 			if (mTexture == NULL)
 			{
@@ -246,25 +239,21 @@ public:
 			}
 			else
 			{
-				//Get image dimensions
+				//lấy kích cỡ
 				mWidth = textSurface->w;
 				mHeight = textSurface->h;
 			}
 
-			//Get rid of old surface
+			//giải phóng surface
 			SDL_FreeSurface(textSurface);
 		}
 
-		//Return success
+		//return 1 bool kiểm tra có load được không
 		return mTexture != NULL;
 	}
-	//Creates image from font string
 	bool specialLoad(std::wstring textureText, SDL_Color textColor)
 	{
-		//Get rid of preexisting texture
 		free();
-
-		//Render text surface
 		SDL_Surface* textSurface = TTF_RenderUNICODE_Solid(contentFont, (const Uint16*)textureText.c_str(), textColor);
 		if (textSurface == NULL)
 		{
@@ -272,7 +261,6 @@ public:
 		}
 		else
 		{
-			//Create texture from surface pixels
 			mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
 			if (mTexture == NULL)
 			{
@@ -280,23 +268,18 @@ public:
 			}
 			else
 			{
-				//Get image dimensions
 				mWidth = textSurface->w;
 				mHeight = textSurface->h;
 			}
 
-			//Get rid of old surface
+			
 			SDL_FreeSurface(textSurface);
 		}
-
-		//Return success
 		return mTexture != NULL;
 	}
 
-	//Deallocates texture
 	void free()
 	{
-		//Free texture if it exists
 		if (mTexture != NULL)
 		{
 			SDL_DestroyTexture(mTexture);
@@ -307,24 +290,23 @@ public:
 	}
 
 
-	//Renders texture at given point
+	// hàm render tại tọa độ x y
 	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE)
 	{
-		//Set rendering space and render to screen
+		//khởi tạo ô chứa thứ sẽ được render ra nogaif màn hình
 		SDL_Rect renderQuad = { x, y, mWidth, mHeight };
 
-		//Set clip rendering dimensions
+		//
 		if (clip != NULL)
 		{
 			renderQuad.w = clip->w;
 			renderQuad.h = clip->h;
 		}
-
-		//Render to screen
+		//hàm render ra màn hình
 		SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 	}
 
-	//Gets image dimensions
+	// lấy kích cỡ
 	int getWidth()
 	{
 		return mWidth;
@@ -335,10 +317,7 @@ public:
 	}
 
 private:
-	//The actual hardware texture
 	SDL_Texture* mTexture;
-
-	//Image dimensions
 	int mWidth;
 	int mHeight;
 };
@@ -503,47 +482,42 @@ void gBtn::handleEvent(SDL_Event* e)
 {
 	if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
 	{
-		//Get mouse position
+		//lấy vị trí con chuột
 		int x, y;
 		SDL_GetMouseState(&x, &y);
-		//Check if mouse is in button
+		//check nếu chuột ở bên trong
 		bool inside = true;
 
-		//Mouse is left of the button
+		//chuột nằm bên trái
 		if (x < mPos.x)
 		{
 			inside = false;
 		}
-		//Mouse is right of the button
+		//chuột nằm bên phải
 		else if (x > mPos.x + mPos.w)
 		{
 			inside = false;
 		}
-		//Mouse above the button
+		//chuột nằm trên
 		else if (y < mPos.y)
 		{
 			inside = false;
 		}
-		//Mouse below the button
+		//chuột nằm dưới
 		else if (y > mPos.y + mPos.h)
 		{
 			inside = false;
 		}
-		//Mouse is outside button
+		//nếu chuột nằm ở ngoài
 		if (!inside)
 		{
 			//place holder
 		}
-		//Mouse is inside button
+//nếu chuột nằm trong
 		else
 		{
-			//Set mouse over sprite
 			switch (e->type)
 			{
-				/*case SDL_MOUSEMOTION:
-
-					break;*/
-
 			case SDL_MOUSEBUTTONDOWN:
 				if (com == "btn2") {
 					quit = true;
@@ -613,7 +587,6 @@ int main(int argc, char* args[])
 			SDL_Event e;
 			//The current input text.
 
-			//Enable text input
 			SDL_StartTextInput();
 
 			//Trong khi chương trình chạy
@@ -649,10 +622,9 @@ int main(int argc, char* args[])
 
 						if (e.type == SDL_KEYDOWN)
 						{
-							//Handle backspace
+							//trường hợp xóa ký tự
 							if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
 							{
-								//lop off character
 								inputText.pop_back();
 								copy.clear();
 								genItem(inputText);
@@ -677,20 +649,14 @@ int main(int argc, char* args[])
 				//Xóa màn hình
 				SDL_RenderClear(gRenderer);
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-				// Rerender text if needed
-				//Text is not empty
 				if (inputText != "")
 				{
-					//Render new text
 					FindWord.load(inputText.c_str(), textColor);
 				}
-				//Text is empty
 				else
 				{
-					//Render space texture
 					FindWord.load("_", textColor);
 				}
-				//Render text textures
 				if (start)
 				{
 					myTextures["bg"].render(0, 0);

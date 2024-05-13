@@ -73,6 +73,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\vclib\SDL2_image-2.8.2\include;C:\vclib\SDL2_ttf-2.22.0\include;C:\vclib\SDL2-2.30.0\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\vclib\SDL2_ttf-2.22.0\lib\x64;C:\vclib\SDL2_image-2.8.2\lib\x64;C:\vclib\SDL2-2.30.0\lib\x64;$(LibraryPath)</LibraryPath>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
+    <CopyLocalProjectReference>true</CopyLocalProjectReference>
+    <CopyLocalDebugSymbols>true</CopyLocalDebugSymbols>
+    <CopyCppRuntimeToOutputDir>true</CopyCppRuntimeToOutputDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
