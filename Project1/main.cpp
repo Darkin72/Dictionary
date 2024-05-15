@@ -680,10 +680,10 @@ int main(int argc, char* args[])
 					}
 					if (choose.name != "") {
 						item.load(choose.name, textColor);
-						item.render(350, 192);
+						item.render(450, 192);
 						for (int i = 0; i < ChosenWord.size()-1; i++) {
 							content.specialLoad(ChosenWord[i], textColor);
-							content.render(350, 242 + i * 20);
+							content.render(450, 242 + i * 20);
 						}
 					}
 				}
